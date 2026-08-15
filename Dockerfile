@@ -1,9 +1,9 @@
-FROM node:20-slim
+FROM node:20
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --production
+COPY package*.json ./
+RUN npm ci --omit=dev || npm install --omit=dev
 
 COPY . .
 
