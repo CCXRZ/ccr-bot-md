@@ -347,6 +347,46 @@ async function startBot() {
       console.log(`👤 Owner: +${config.owner}`);
       console.log(`🔧 Mode: ${config.mode.toUpperCase()}`);
       console.log(`📝 Prefix: ${config.prefix}`);
+
+      // ===== ALIVE PING - sends to owner's inbox every 30 min =====
+      const ALIVE_INTERVAL = 30 * 60 * 1000; // 30 minutes
+      const ownerJid = config.owner + '@s.whatsapp.net';
+
+      const sendAlivePing = async () => {
+        try {
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+          const uptime = getRuntime();
+
+          const aliveHeader =
+            '╭═══════════════════\n' +
+            '│    \u26A1 CCR BOT MD \u26A1\n' +
+            '│     ALIVE STATUS\n' +
+            '╰═══════════════════\n\n' +
+            '\U0001F7E2 *Status:* ONLINE\n' +
+            '\U0001F550 *Time:* ' + timeStr + '\n' +
+            '\U0001F4C5 *Date:* ' + dateStr + '\n' +
+            '\u23F1\uFE0F *Uptime:* ' + uptime + '\n' +
+            '\U0001F527 *Mode:* ' + config.mode.toUpperCase() + '\n' +
+            '\U0001F4DD *Prefix:* (' + config.prefix + ')\n' +
+            '\U0001F4E1 *Ping:* Sent to inbox\n\n' +
+            '> ' + config.botName + ' ' + config.version + ' | Always alive \U0001F49A';
+
+          await sock.sendMessage(ownerJid, { text: aliveHeader });
+          console.log('✅ Alive ping sent to owner inbox');
+        } catch (e) {
+          console.error('❌ Alive ping failed:', e.message);
+        }
+      };
+
+      // Send first alive ping after 30 seconds
+      setTimeout(sendAlivePing, 30000);
+      // Then repeat every 30 minutes
+      const aliveInterval = setInterval(sendAlivePing, ALIVE_INTERVAL);
+
+      // Store interval so we can clear on disconnect
+      sock._aliveInterval = aliveInterval;
     }
   });
 
@@ -486,70 +526,41 @@ async function startBot() {
         if (command === 'menu' || command === 'list' || command === 'commands') {
           let header = await getHeader(sock, chatId, sender);
           let menuText =
-            header + '\n\n' +
-            '📋 *COMMAND MENU*\n\n' +
-            '🔹 *MAIN*\n' +
-            `${config.prefix}menu - Show this menu\n` +
-            `${config.prefix}alive - Check bot status\n` +
-            `${config.prefix}ping - Response speed\n` +
-            `${config.prefix}runtime - Bot uptime\n` +
-            `${config.prefix}owner - Owner info\n` +
-            `${config.prefix}info - Bot info\n\n` +
-            '💰 *ECONOMY*\n' +
-            `${config.prefix}wallet - Wallet balance\n` +
-            `${config.prefix}bank - Bank balance\n` +
-            `${config.prefix}daily - Daily reward\n` +
-            `${config.prefix}work - Work for coins\n` +
-            `${config.prefix}crime - Commit crime (risky)\n` +
-            `${config.prefix}hunt - Hunt for coins\n` +
-            `${config.prefix}fish - Fish for coins\n` +
-            `${config.prefix}mine - Mine for coins\n` +
-            `${config.prefix}deposit <amt> - Deposit\n` +
-            `${config.prefix}withdraw <amt> - Withdraw\n` +
-            `${config.prefix}transfer @user <amt> - Transfer\n` +
-            `${config.prefix}leaderboard - Richest users\n\n` +
-            '👥 *GROUP*\n' +
-            `${config.prefix}kick @user - Kick member\n` +
-            `${config.prefix}promote @user - Promote\n` +
-            `${config.prefix}demote @user - Demote\n` +
-            `${config.prefix}tagall - Tag everyone\n` +
-            `${config.prefix}hidetag <text> - Hidden tag\n` +
-            `${config.prefix}grouplink - Invite link\n` +
-            `${config.prefix}setname <name> - Group name\n` +
-            `${config.prefix}setdesc <text> - Group desc\n` +
-            `${config.prefix}groupinfo - Group info\n\n` +
-            '🛡️ *PROTECTION*\n' +
-            `${config.prefix}antilink on/off\n` +
-            `${config.prefix}antifwd on/off\n` +
-            `${config.prefix}antibadword on/off\n` +
-            `${config.prefix}antispam on/off\n` +
-            `${config.prefix}flood on/off\n` +
-            `${config.prefix}antipromote on/off\n` +
-            `${config.prefix}antidemote on/off\n\n` +
-            '🛠️ *TOOLS*\n' +
-            `${config.prefix}sticker - Image to sticker\n` +
-            `${config.prefix}toimg - Sticker to image\n` +
-            `${config.prefix}translate <lang> <text>\n` +
-            `${config.prefix}ttp <text> - Text to picture\n` +
-            `${config.prefix}attp <text> - Animated sticker\n` +
-            `${config.prefix}yts <query> - YouTube search\n` +
-            `${config.prefix}weather <city> - Weather\n` +
-            `${config.prefix}quote - Random quote\n` +
-            `${config.prefix}joke - Random joke\n` +
-            `${config.prefix}fact - Random fact\n\n` +
-            '🎮 *FUN*\n' +
-            `${config.prefix}8ball <question>\n` +
-            `${config.prefix}flip - Flip a coin\n` +
-            `${config.prefix}dice - Roll dice\n` +
-            `${config.prefix}rps <rock/paper/scissors>\n` +
-            `${config.prefix}guess <number> - Guessing game\n\n` +
-            '👑 *OWNER*\n' +
-            `${config.prefix}setprefix <prefix>\n` +
-            `${config.prefix}setname <name>\n` +
-            `${config.prefix}mode public/private\n` +
-            `${config.prefix}broadcast <text>\n` +
-            `${config.prefix}shutdown - Stop bot\n\n` +
-            `> ${config.botName} ${config.version} | Powered by Baileys`;
+            '╭═══════════════════════‬\n' +
+            '│  ⚡ CCR BOT MD ' + config.version + ' ⚡\n' +
+            '│  ⌬ Command Center ⌬\n' +
+            '╰═══════════════════════‬\n\n' +
+            '━━━ 📌 MAIN ━━━\n' +
+            config.prefix + 'menu  •  ' + config.prefix + 'alive  •  ' + config.prefix + 'ping\n' +
+            config.prefix + 'runtime  •  ' + config.prefix + 'owner  •  ' + config.prefix + 'info\n\n' +
+            '━━━ 💰 ECONOMY ━━━\n' +
+            config.prefix + 'wallet  •  ' + config.prefix + 'bank  •  ' + config.prefix + 'daily\n' +
+            config.prefix + 'work  •  ' + config.prefix + 'crime  •  ' + config.prefix + 'hunt\n' +
+            config.prefix + 'fish  •  ' + config.prefix + 'mine  •  ' + config.prefix + 'deposit\n' +
+            config.prefix + 'withdraw  •  ' + config.prefix + 'transfer  •  ' + config.prefix + 'leaderboard\n\n' +
+            '━━━ 👥 GROUP ━━━\n' +
+            config.prefix + 'kick  •  ' + config.prefix + 'promote  •  ' + config.prefix + 'demote\n' +
+            config.prefix + 'tagall  •  ' + config.prefix + 'hidetag  •  ' + config.prefix + 'grouplink\n' +
+            config.prefix + 'setname  •  ' + config.prefix + 'setdesc  •  ' + config.prefix + 'groupinfo\n\n' +
+            '━━━ 🛡️ PROTECTION ━━━\n' +
+            config.prefix + 'antilink  •  ' + config.prefix + 'antifwd  •  ' + config.prefix + 'antibadword\n' +
+            config.prefix + 'antispam  •  ' + config.prefix + 'flood  •  ' + config.prefix + 'antipromote\n' +
+            config.prefix + 'antidemote\n\n' +
+            '━━━ 🛠️ TOOLS ━━━\n' +
+            config.prefix + 'sticker  •  ' + config.prefix + 'toimg  •  ' + config.prefix + 'translate\n' +
+            config.prefix + 'ttp  •  ' + config.prefix + 'attp  •  ' + config.prefix + 'yts\n' +
+            config.prefix + 'weather  •  ' + config.prefix + 'quote  •  ' + config.prefix + 'joke\n' +
+            config.prefix + 'fact\n\n' +
+            '━━━ 🎮 FUN ━━━\n' +
+            config.prefix + '8ball  •  ' + config.prefix + 'flip  •  ' + config.prefix + 'dice\n' +
+            config.prefix + 'rps  •  ' + config.prefix + 'guess\n\n' +
+            '━━━ 👑 OWNER ━━━\n' +
+            config.prefix + 'setprefix  •  ' + config.prefix + 'setname  •  ' + config.prefix + 'mode\n' +
+            config.prefix + 'broadcast  •  ' + config.prefix + 'shutdown\n\n' +
+            '╭═══════════════════════‬\n' +
+            '│  ⚡ Powered by Baileys ⚡\n' +
+            '│  👑 Clarence Rajah\n' +
+            '╰═══════════════════════‬';
 
           await sock.sendMessage(chatId, { text: menuText });
           continue;
