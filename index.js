@@ -706,19 +706,40 @@ async function startBot() {
                 text: `😴 You're tired! Come back in ${m} minutes.`
               });
             } else {
-              let jobs = ['programmer', 'chef', 'driver', 'teacher', 'doctor', 'artist', 'singer', 'farmer', 'mechanic', 'barber'];
-              let job = pickRandom(jobs);
-              let earned = randomInt(20, 80) + user.level * 5;
-              user.wallet += earned;
               user.lastWork = Date.now();
-              await sock.sendMessage(chatId, {
-                text:
-                  `💼 *Work Complete!*\n\n` +
-                  `You worked as a ${job}.\n` +
-                  `💰 Earned: +${formatMoney(earned)}\n` +
-                  `💵 Wallet: ${formatMoney(user.wallet)}`,
-                mentions: [sender]
-              });
+              // 30% chance of failing
+              if (Math.random() < 0.3) {
+                let failReasons = [
+                  'Your boss fired you for being late!',
+                  'The business went bankrupt!',
+                  'You got injured on the job!',
+                  'Your equipment broke down!',
+                  'The client cancelled at the last minute!',
+                  'You fell asleep during your shift!'
+                ];
+                await sock.sendMessage(chatId, {
+                  text:
+                    `💼 *Work Failed!*\n\n` +
+                    `❌ ${pickRandom(failReasons)}\n` +
+                    `💰 Earned: Nothing\n` +
+                    `💵 Wallet: ${formatMoney(user.wallet)}`,
+                  mentions: [sender]
+                });
+              } else {
+                let jobs = ['programmer', 'chef', 'driver', 'teacher', 'doctor', 'artist', 'singer', 'farmer', 'mechanic', 'barber'];
+                let job = pickRandom(jobs);
+                let earned = randomInt(20, 80) + user.level * 5;
+                user.wallet += earned;
+                await sock.sendMessage(chatId, {
+                  text:
+                    `💼 *Work Complete!*\n\n` +
+                    `You worked as a ${job}.\n` +
+                    `💰 Earned: +${formatMoney(earned)}\n` +
+                    `💵 Wallet: ${formatMoney(user.wallet)}`,
+                  mentions: [sender]
+                });
+                grantEcoXP(sender, sock, chatId, 8, 15);
+              }
             }
             continue;
           }
