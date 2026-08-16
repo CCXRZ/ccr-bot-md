@@ -110,6 +110,14 @@ function ecoLevelUp(jid, sock, chat) {
   }
 }
 
+// Grant XP only for economy commands
+function grantEcoXP(jid, sock, chat, min = 5, max = 15) {
+  let ecoUser = getEcoUser(jid);
+  let xpGain = randomInt(min, max);
+  ecoUser.xp += xpGain;
+  ecoLevelUp(jid, sock, chat);
+}
+
 // ===== SPAM/FLOOD TRACKING =====
 let spamTracker = {};
 let floodTracker = {};
@@ -497,14 +505,6 @@ async function startBot() {
             delete floodTracker[key];
             continue;
           }
-        }
-
-        // ===== ECONOMY: XP GAIN =====
-        if (ecoSettings.on && text) {
-          let ecoUser = getEcoUser(sender);
-          let xpGain = randomInt(1, 5);
-          ecoUser.xp += xpGain;
-          ecoLevelUp(sender, sock, chatId);
         }
 
         // ===== COMMAND HANDLING =====
